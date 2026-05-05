@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1098,4 +1099,1096 @@ renderDefs();
 buildCharts();
 </script>
 </body>
+=======
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hedge Strategy Analytics — Institutional Deep Dive</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Mono:wght@300;400;500&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0b0e;
+    --surface: #111318;
+    --surface2: #181c24;
+    --border: #1e2330;
+    --gold: #c9a84c;
+    --gold2: #e8c97a;
+    --silver: #8a9bb5;
+    --text: #d4dae8;
+    --text-dim: #5c6a82;
+    --green: #2ecc8a;
+    --red: #e05c5c;
+    --blue: #5b9bd5;
+    --amber: #e6a230;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(180deg, #0d0f14 0%, var(--bg) 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 32px 48px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -80px; left: -80px;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(201,168,76,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+  .header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--gold2);
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+  }
+  .header h1 span {
+    color: var(--text);
+    font-weight: 400;
+    font-size: 16px;
+    display: block;
+    margin-top: 4px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 1px;
+    color: var(--silver);
+  }
+  .header-badge {
+    background: rgba(201,168,76,0.1);
+    border: 1px solid rgba(201,168,76,0.3);
+    color: var(--gold);
+    padding: 6px 14px;
+    border-radius: 2px;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: 400;
+    white-space: nowrap;
+  }
+
+  /* NAV */
+  .nav-tabs {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 48px;
+    display: flex;
+    gap: 2px;
+  }
+  .nav-tab {
+    padding: 14px 24px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    color: var(--text-dim);
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .nav-tab:hover { color: var(--gold); background: rgba(201,168,76,0.05); }
+  .nav-tab.active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+    background: rgba(201,168,76,0.08);
+  }
+
+  /* CONTENT */
+  .content { padding: 32px 48px; }
+  .section { display: none; }
+  .section.active { display: block; }
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: var(--gold2);
+    margin-bottom: 6px;
+  }
+  .section-sub {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 24px;
+    letter-spacing: 0.5px;
+  }
+
+  /* TABLES */
+  .full-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 32px;
+    font-size: 11px;
+  }
+  .full-table th {
+    background: var(--surface2);
+    padding: 10px 14px;
+    text-align: right;
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .full-table th:first-child { text-align: left; color: var(--silver); }
+  .full-table td {
+    padding: 8px 14px;
+    text-align: right;
+    border-bottom: 1px solid rgba(30,35,48,0.5);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+  }
+  .full-table td:first-child { text-align: left; color: var(--silver); font-size: 10px; }
+  .full-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .td-pos { color: var(--green); }
+  .td-neg { color: var(--red); }
+  .td-hl { color: var(--gold2); }
+
+  /* CHART CONTAINERS */
+  .chart-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+  .chart-grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 20px;
+  }
+  .chart-card.full { grid-column: 1 / -1; }
+  .chart-title {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--silver);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .chart-title::before {
+    content: '';
+    width: 3px;
+    height: 12px;
+    background: var(--gold);
+    display: inline-block;
+  }
+  .chart-wrap { position: relative; height: 220px; }
+  .chart-wrap.tall { height: 300px; }
+  .chart-wrap.xtall { height: 380px; }
+
+  /* HEATMAP */
+  .heatmap-container { overflow-x: auto; }
+  .heatmap-table {
+    border-collapse: collapse;
+    width: 100%;
+    font-family: 'DM Mono', monospace;
+  }
+  .heatmap-table th {
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding: 6px 8px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .heatmap-table th.year-col { text-align: left; color: var(--silver); }
+  .heatmap-table td {
+    padding: 8px 6px;
+    text-align: center;
+    font-size: 10px;
+    font-weight: 400;
+    min-width: 72px;
+    border: 1px solid rgba(30,35,48,0.4);
+  }
+  .heatmap-table td.year-label {
+    color: var(--silver);
+    text-align: left;
+    font-size: 11px;
+    padding: 8px 12px;
+    font-weight: 500;
+    background: var(--surface2);
+    border-right: 1px solid var(--border);
+  }
+
+  /* CHURNING */
+  .churn-stats {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .churn-stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 16px;
+  }
+  .churn-stat-label {
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+  .churn-stat-val {
+    font-size: 20px;
+    color: var(--gold2);
+    font-family: 'Playfair Display', serif;
+  }
+  .churn-stat-sub {
+    font-size: 9px;
+    color: var(--silver);
+    margin-top: 3px;
+  }
+
+  /* STRATEGY DEFS */
+  .defs-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .def-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--gold);
+    padding: 16px;
+  }
+  .def-term {
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 6px;
+  }
+  .def-desc {
+    font-family: 'Crimson Pro', serif;
+    font-size: 13px;
+    color: var(--silver);
+    line-height: 1.6;
+  }
+
+  /* MONTHLY TABLE */
+  .monthly-table-wrap { overflow-x: auto; max-height: 520px; overflow-y: auto; }
+  .monthly-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10.5px;
+    font-family: 'DM Mono', monospace;
+  }
+  .monthly-table thead tr { position: sticky; top: 0; z-index: 2; }
+  .monthly-table th {
+    background: var(--surface2);
+    color: var(--text-dim);
+    padding: 9px 10px;
+    text-align: right;
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .monthly-table th:first-child { text-align: left; }
+  .monthly-table td {
+    padding: 7px 10px;
+    text-align: right;
+    border-bottom: 1px solid rgba(30,35,48,0.4);
+  }
+  .monthly-table td:first-child { text-align: left; color: var(--silver); }
+  .monthly-table tr:hover td { background: rgba(255,255,255,0.015); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* LEGEND */
+  .legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+  .legend-dot {
+    width: 10px;
+    height: 3px;
+    border-radius: 1px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <h1>Hedge Strategy Analytics
+        <span>INSTITUTIONAL DEEP DIVE — FULL PERIOD 2021–2026 (CORRECTED DATES)</span>
+      </h1>
+    </div>
+    <div class="header-badge">Confidential</div>
+  </div>
+</div>
+
+<div class="nav-tabs">
+  <div class="nav-tab active" onclick="showSection('overview')">Overview</div>
+  <div class="nav-tab" onclick="showSection('equity')">Equity Curves</div>
+  <div class="nav-tab" onclick="showSection('drawdown')">Drawdown</div>
+  <div class="nav-tab" onclick="showSection('monthly')">Monthly Returns</div>
+  <div class="nav-tab" onclick="showSection('heatmap')">Heatmap</div>
+  <div class="nav-tab" onclick="showSection('churning')">Churning</div>
+  <div class="nav-tab" onclick="showSection('defs')">Definitions</div>
+</div>
+
+<div class="content">
+
+  <!-- OVERVIEW -->
+  <div class="section active" id="section-overview">
+    <div class="section-title">Executive Dashboard</div>
+    <div class="section-sub">Full-period performance metrics across all strategy layers</div>
+
+    <table class="full-table" id="dash-table">
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>Base SIM</th>
+          <th>ST Filter</th>
+          <th>EMA Filter</th>
+          <th>COMBO Filter</th>
+          <th>ULTRA Layer</th>
+          <th>COMBO+Hedge</th>
+          <th>ULTRA Defense</th>
+        </tr>
+      </thead>
+      <tbody id="dash-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- EQUITY CURVES -->
+  <div class="section" id="section-equity">
+    <div class="section-title">Equity Curves</div>
+    <div class="section-sub">Normalised NAV growth — Base SIM vs COMBO+Hedge vs Benchmark</div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#c9a84c"></div>Base SIM</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#5b9bd5"></div>COMBO+Hedge</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#4a4f62"></div>Benchmark</div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-wrap xtall"><canvas id="equityChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- DRAWDOWN -->
+  <div class="section" id="section-drawdown">
+    <div class="section-title">Drawdown Analysis</div>
+    <div class="section-sub">Underwater equity curves — Base SIM vs COMBO+Hedge</div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#e05c5c"></div>Base SIM Drawdown</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#5b9bd5"></div>COMBO+Hedge Drawdown</div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-wrap xtall"><canvas id="drawdownChart"></canvas></div>
+    </div>
+
+    <div class="chart-grid-3" style="margin-top:20px">
+      <div class="chart-card">
+        <div class="chart-title">Max Drawdown by Strategy</div>
+        <div class="chart-wrap tall"><canvas id="maxDDChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">VaR 95% &amp; 99%</div>
+        <div class="chart-wrap tall"><canvas id="varChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">CVaR 95% &amp; 99%</div>
+        <div class="chart-wrap tall"><canvas id="cvarChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MONTHLY RETURNS -->
+  <div class="section" id="section-monthly">
+    <div class="section-title">Monthly Return Comparison</div>
+    <div class="section-sub">Base SIM vs COMBO+Hedge vs Benchmark — month by month (realized returns)</div>
+
+    <div class="chart-card" style="margin-bottom:20px">
+      <div class="chart-title">Monthly Returns — Bar Chart</div>
+      <div class="chart-wrap xtall"><canvas id="monthlyBarChart"></canvas></div>
+    </div>
+
+    <div class="section-title" style="font-size:14px; margin-bottom:8px">Full Monthly Table</div>
+    <div class="monthly-table-wrap">
+      <table class="monthly-table">
+        <thead>
+          <tr>
+            <th>Month</th>
+            <th>β Beta</th>
+            <th>Avg Ex-Ante Sharpe</th>
+            <th>#Stocks</th>
+            <th>Base SIM</th>
+            <th>ST Filter</th>
+            <th>EMA Filter</th>
+            <th>COMBO</th>
+            <th>ULTRA</th>
+            <th>COMBO+Hedge</th>
+            <th>ULTRA Defense</th>
+            <th>Benchmark</th>
+          </tr>
+        </thead>
+        <tbody id="monthly-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- HEATMAP -->
+  <div class="section" id="section-heatmap">
+    <div class="section-title">Return Heatmap — COMBO+Hedge</div>
+    <div class="section-sub">Monthly returns colour-coded: green = positive, red = negative (realized returns)</div>
+    <div class="chart-card">
+      <div class="heatmap-container">
+        <table class="heatmap-table" id="heatmap-table">
+          <thead>
+            <tr>
+              <th class="year-col">Year</th>
+              <th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th>
+              <th>May</th><th>Jun</th><th>Jul</th><th>Aug</th>
+              <th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th>
+              <th>Annual</th>
+            </tr>
+          </thead>
+          <tbody id="heatmap-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="margin-top:24px">
+      <div class="section-title" style="font-size:14px; margin-bottom:8px">Base SIM Heatmap</div>
+      <div class="chart-card">
+        <div class="heatmap-container">
+          <table class="heatmap-table">
+            <thead>
+              <tr>
+                <th class="year-col">Year</th>
+                <th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th>
+                <th>May</th><th>Jun</th><th>Jul</th><th>Aug</th>
+                <th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th>
+                <th>Annual</th>
+              </tr>
+            </thead>
+            <tbody id="heatmap-base-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHURNING -->
+  <div class="section" id="section-churning">
+    <div class="section-title">Churning &amp; Portfolio Dynamics</div>
+    <div class="section-sub">Monthly portfolio construction metrics</div>
+
+    <div class="churn-stats" id="churn-stats-cards"></div>
+
+    <div class="chart-grid-2">
+      <div class="chart-card">
+        <div class="chart-title">Avg Ex-Ante Sharpe Over Time</div>
+        <div class="chart-wrap tall"><canvas id="sharpeTimeChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Portfolio Beta Over Time</div>
+        <div class="chart-wrap tall"><canvas id="betaTimeChart"></canvas></div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Stock Count &amp; Turnover Over Time</div>
+      <div class="chart-wrap tall"><canvas id="stockCountChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- DEFINITIONS -->
+  <div class="section" id="section-defs">
+    <div class="section-title">Strategy &amp; Metric Definitions</div>
+    <div class="section-sub">Mathematical formulae and conceptual descriptions</div>
+    <div class="defs-grid" id="defs-grid"></div>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// HELPER FUNCTION: SHIFT MONTH FORWARD BY 1
+// ============================================================
+function shiftMonthForward(ym) {
+  // "2021-04" (April construction) → "2021-05" (May realization)
+  const [year, month] = ym.split('-').map(Number);
+  let newMonth = month + 1;
+  let newYear = year;
+  if (newMonth > 12) {
+    newMonth = 1;
+    newYear += 1;
+  }
+  return `${newYear}-${String(newMonth).padStart(2, '0')}`;
+}
+
+// ============================================================
+// DATA (Original Excel labels, will be shifted for display)
+// ============================================================
+const dashData = {
+  metrics: ["CAGR","XIRR","Abs Return","Alpha vs Bench","Volatility","Downside Dev","Calmar","Max Drawdown","DD Duration (M)","VaR 95%","VaR 99%","CVaR 95%","CVaR 99%","Info Ratio","Win Rate","Profit Factor","Expectancy","Avg Gain (M)","Avg Loss (M)","Rolling 1Y","Rolling 3Y","Best Month","Worst Month","Avg Ex-Ante Sharpe"],
+  cols: ["Base SIM","ST Filter","EMA Filter","COMBO Filter","ULTRA Layer","COMBO+Hedge","ULTRA Defense"],
+  values: {
+    "CAGR": [0.3074,0.2165,0.2212,0.1933,0.1933,0.1627,0.1418],
+    "XIRR": [0.3074,0.2165,0.2212,0.1933,0.1933,0.1627,0.1418],
+    "Abs Return": [2.9067,1.7082,1.7616,1.4559,1.4559,1.1517,0.9621],
+    "Alpha vs Bench": [0.2043,0.1134,0.1181,0.0902,0.0902,0.0595,0.0386],
+    "Volatility": [0.2221,0.1571,0.1719,0.1480,0.1480,0.1347,0.1373],
+    "Downside Dev": [0.2262,0.1589,0.1408,0.1283,0.1283,0.1025,0.1108],
+    "Calmar": [1.2732,1.4393,1.2915,1.3482,1.3482,1.1244,0.8042],
+    "Max Drawdown": [-0.2415,-0.1504,-0.1713,-0.1434,-0.1434,-0.1447,-0.1763],
+    "DD Duration (M)": [17,17,21,17,17,21,20],
+    "VaR 95%": [-0.0671,-0.0424,-0.0529,-0.0412,-0.0412,-0.0278,-0.0412],
+    "VaR 99%": [-0.1404,-0.0996,-0.0972,-0.0914,-0.0914,-0.0747,-0.0791],
+    "CVaR 95%": [-0.1141,-0.0773,-0.0783,-0.0722,-0.0722,-0.0585,-0.0643],
+    "CVaR 99%": [-0.1531,-0.1257,-0.1326,-0.1237,-0.1237,-0.1212,-0.1212],
+    "Info Ratio": [0.7652,0.5547,0.5428,0.4601,0.4601,0.3286,0.2193],
+    "Win Rate": [0.7213,0.7213,0.6230,0.6393,0.6393,0.5738,0.5738],
+    "Profit Factor": [2.8439,2.8534,2.7614,2.7952,2.7952,2.7634,2.3282],
+    "Expectancy": [0.0246,0.0175,0.0180,0.0157,0.0157,0.0134,0.0119],
+    "Avg Gain (M)": [0.0526,0.0373,0.0453,0.0383,0.0383,0.0365,0.0363],
+    "Avg Loss (M)": [-0.0479,-0.0338,-0.0271,-0.0243,-0.0243,-0.0178,-0.0210],
+    "Rolling 1Y": [0.3644,0.2449,0.2596,0.2206,0.2206,0.1872,0.1689],
+    "Rolling 3Y": [1.8509,1.1418,1.2571,1.0197,1.0197,0.8535,0.7712],
+    "Best Month": [0.2071,0.1131,0.1226,0.1135,0.1135,0.1135,0.1135],
+    "Worst Month": [-0.1531,-0.1257,-0.1326,-0.1237,-0.1237,-0.1212,-0.1212],
+    "Avg Ex-Ante Sharpe": [5.7935,5.7935,5.7935,5.7935,5.7935,5.7935,5.7935]
+  }
+};
+
+// Original monthly data (construction month labels)
+const monthlyDataRaw = [
+  {m:"2021-04",beta:0.7617,eas:13.759,n:13,base:0.0886,st:0.0729,ema:0.0924,combo:0.0767,ultra:0.0767,ch:0.0396,uh:0.0396,bench:-0.0041},
+  {m:"2021-05",beta:0.6034,eas:6.804,n:21,base:0.0509,st:0.0519,ema:0.0375,combo:0.0355,ultra:0.0355,ch:0.0355,uh:0.0355,bench:0.0650},
+  {m:"2021-06",beta:0.5456,eas:5.591,n:23,base:0.0859,st:0.0831,ema:0.0824,combo:0.0824,ultra:0.0824,ch:0.0824,uh:0.0824,bench:0.0089},
+  {m:"2021-07",beta:0.4709,eas:7.465,n:25,base:0.0402,st:0.0347,ema:0.0296,combo:0.0308,ultra:0.0308,ch:0.0308,uh:0.0308,bench:0.0026},
+  {m:"2021-08",beta:0.3018,eas:9.051,n:11,base:-0.0380,st:-0.0406,ema:-0.0529,combo:-0.0412,ultra:-0.0412,ch:-0.0412,uh:-0.0412,bench:0.0869},
+  {m:"2021-09",beta:0.4145,eas:5.568,n:29,base:-0.0083,st:-0.0050,ema:-0.0051,combo:-0.0029,ultra:-0.0029,ch:-0.0019,uh:-0.0019,bench:0.0284},
+  {m:"2021-10",beta:0.5051,eas:8.343,n:30,base:-0.0232,st:-0.0228,ema:-0.0198,combo:-0.0194,ultra:-0.0194,ch:0.0011,uh:0.0267,bench:0.0030},
+  {m:"2021-11",beta:0.7880,eas:5.874,n:25,base:0.0017,st:0.0122,ema:-0.0164,combo:0.0046,ultra:0.0046,ch:-0.0061,uh:-0.0167,bench:-0.0390},
+  {m:"2021-12",beta:0.8915,eas:8.758,n:27,base:-0.0626,st:-0.0289,ema:-0.0519,combo:-0.0233,ultra:-0.0233,ch:-0.0143,uh:-0.0143,bench:0.0218},
+  {m:"2022-01",beta:0.5113,eas:4.240,n:38,base:-0.0671,st:-0.0367,ema:-0.0378,combo:-0.0302,ultra:-0.0302,ch:-0.0120,uh:0.0107,bench:-0.0008},
+  {m:"2022-02",beta:0.6933,eas:3.529,n:22,base:0.0715,st:0.0406,ema:0.0408,combo:0.0407,ultra:0.0407,ch:-0.0087,uh:-0.0510,bench:-0.0315},
+  {m:"2022-03",beta:0.6464,eas:4.058,n:21,base:0.0732,st:0.0444,ema:0.0524,combo:0.0523,ultra:0.0523,ch:0.0519,uh:0.0519,bench:0.0399},
+  {m:"2022-04",beta:0.4598,eas:4.222,n:28,base:-0.0537,st:-0.0591,ema:-0.0540,combo:-0.0540,ultra:-0.0540,ch:-0.0438,uh:-0.0438,bench:-0.0207},
+  {m:"2022-05",beta:0.5143,eas:3.769,n:26,base:0.0100,st:0.0187,ema:-0.0186,combo:-0.0117,ultra:-0.0117,ch:0.0105,uh:0.0328,bench:-0.0303},
+  {m:"2022-06",beta:0.5706,eas:2.918,n:28,base:0.0779,st:0.0351,ema:0.0418,combo:0.0294,ultra:0.0294,ch:0.0071,uh:-0.0114,bench:-0.0485},
+  {m:"2022-07",beta:0.5134,eas:4.462,n:28,base:0.0317,st:0.0095,ema:0.0059,combo:0.0056,ultra:0.0056,ch:-0.0051,uh:-0.0051,bench:0.0873},
+  {m:"2022-08",beta:0.4745,eas:4.897,n:27,base:0.0030,st:0.0133,ema:-0.0020,combo:0.0094,ultra:0.0094,ch:-0.0026,uh:-0.0026,bench:0.0350},
+  {m:"2022-09",beta:0.4960,eas:4.119,n:23,base:0.0308,st:0.0287,ema:0.0353,combo:0.0350,ultra:0.0350,ch:0.0150,uh:0.0150,bench:-0.0374},
+  {m:"2022-10",beta:0.3574,eas:5.534,n:24,base:0.0055,st:0.0096,ema:0.0106,combo:0.0106,ultra:0.0106,ch:0.0106,uh:0.0106,bench:0.0537},
+  {m:"2022-11",beta:0.7249,eas:10.954,n:15,base:0.0027,st:0.0020,ema:0.0051,combo:0.0090,ultra:0.0090,ch:0.0135,uh:0.0135,bench:0.0414},
+  {m:"2022-12",beta:0.5058,eas:4.639,n:24,base:-0.0445,st:-0.0348,ema:-0.0364,combo:-0.0313,ultra:-0.0313,ch:-0.0228,uh:-0.0122,bench:-0.0348},
+  {m:"2023-01",beta:0.4622,eas:3.707,n:30,base:-0.0457,st:-0.0424,ema:-0.0372,combo:-0.0271,ultra:-0.0271,ch:-0.0230,uh:-0.0189,bench:-0.0245},
+  {m:"2023-02",beta:0.4293,eas:4.275,n:30,base:0.0157,st:0.0046,ema:-0.0057,combo:-0.0061,ultra:-0.0061,ch:-0.0059,uh:-0.0057,bench:-0.0203},
+  {m:"2023-03",beta:0.3749,eas:3.876,n:35,base:0.0631,st:0.0374,ema:0.0280,combo:0.0298,ultra:0.0298,ch:0.0298,uh:0.0298,bench:0.0032},
+  {m:"2023-04",beta:0.4766,eas:4.597,n:30,base:0.0649,st:0.0591,ema:0.0537,combo:0.0516,ultra:0.0516,ch:0.0516,uh:0.0516,bench:0.0406},
+  {m:"2023-05",beta:0.4888,eas:5.354,n:31,base:0.1231,st:0.1128,ema:0.1205,combo:0.1121,ultra:0.1121,ch:0.1121,uh:0.1121,bench:0.0260},
+  {m:"2023-06",beta:0.4396,eas:6.348,n:31,base:0.0756,st:0.0744,ema:0.0715,combo:0.0711,ultra:0.0711,ch:0.0711,uh:0.0711,bench:0.0353},
+  {m:"2023-07",beta:0.4819,eas:6.598,n:21,base:0.0376,st:0.0280,ema:0.0286,combo:0.0221,ultra:0.0221,ch:0.0236,uh:0.0236,bench:0.0294},
+  {m:"2023-08",beta:0.3710,eas:8.952,n:35,base:0.0162,st:0.0160,ema:0.0140,combo:0.0144,ultra:0.0144,ch:0.0056,uh:0.0056,bench:-0.0253},
+  {m:"2023-09",beta:0.3361,eas:8.413,n:39,base:0.0144,st:0.0040,ema:0.0079,combo:0.0056,ultra:0.0056,ch:0.0140,uh:0.0140,bench:0.0200},
+  {m:"2023-10",beta:0.5746,eas:4.672,n:28,base:0.1518,st:0.1131,ema:0.1175,combo:0.1135,ultra:0.1135,ch:0.1135,uh:0.1135,bench:-0.0284},
+  {m:"2023-11",beta:0.5517,eas:4.805,n:24,base:0.0495,st:0.0398,ema:0.0439,combo:0.0319,ultra:0.0319,ch:0.0319,uh:0.0319,bench:0.0552},
+  {m:"2023-12",beta:0.3285,eas:6.371,n:19,base:0.1019,st:0.0926,ema:0.0958,combo:0.0959,ultra:0.0959,ch:0.0939,uh:0.0939,bench:0.0794},
+  {m:"2024-01",beta:0.4469,eas:6.684,n:18,base:0.0835,st:0.0711,ema:0.0845,combo:0.0682,ultra:0.0682,ch:0.0632,uh:0.0632,bench:-0.0003},
+  {m:"2024-02",beta:0.3831,eas:6.376,n:38,base:-0.0022,st:-0.0073,ema:-0.0056,combo:-0.0060,ultra:-0.0060,ch:-0.0137,uh:-0.0137,bench:0.0118},
+  {m:"2024-03",beta:0.2804,eas:4.734,n:45,base:0.0827,st:0.0248,ema:0.0705,combo:0.0246,ultra:0.0246,ch:0.0134,uh:0.0021,bench:0.0157},
+  {m:"2024-04",beta:0.3311,eas:5.001,n:42,base:0.0025,st:-0.0222,ema:-0.0141,combo:-0.0220,ultra:-0.0220,ch:-0.0265,uh:-0.0265,bench:0.0124},
+  {m:"2024-05",beta:0.2986,eas:5.027,n:41,base:0.0866,st:0.0756,ema:0.0621,combo:0.0617,ultra:0.0617,ch:0.0407,uh:0.0196,bench:-0.0033},
+  {m:"2024-06",beta:0.4660,eas:4.787,n:31,base:0.0516,st:0.0398,ema:0.0411,combo:0.0360,ultra:0.0360,ch:0.0360,uh:0.0360,bench:0.0657},
+  {m:"2024-07",beta:0.3359,eas:3.424,n:49,base:0.0460,st:0.0396,ema:0.0416,combo:0.0399,ultra:0.0399,ch:0.0268,uh:0.0268,bench:0.0392},
+  {m:"2024-08",beta:0.3706,eas:9.275,n:49,base:0.0291,st:0.0253,ema:0.0315,combo:0.0258,ultra:0.0258,ch:0.0183,uh:0.0183,bench:0.0114},
+  {m:"2024-09",beta:0.4324,eas:6.189,n:47,base:0.0009,st:0.0026,ema:0.0010,combo:0.0011,ultra:0.0011,ch:0.0253,uh:0.0253,bench:0.0228},
+  {m:"2024-10",beta:0.3488,eas:3.249,n:40,base:-0.0024,st:0.0031,ema:0.0006,combo:-0.0011,ultra:-0.0011,ch:-0.0033,uh:-0.0055,bench:-0.0622},
+  {m:"2024-11",beta:0.3972,eas:12.768,n:39,base:0.1249,st:0.0393,ema:0.1177,combo:0.0388,ultra:0.0388,ch:0.0314,uh:0.0314,bench:-0.0031},
+  {m:"2024-12",beta:0.5281,eas:14.021,n:42,base:-0.1531,st:-0.1257,ema:-0.1326,combo:-0.1237,ultra:-0.1237,ch:-0.1212,uh:-0.1212,bench:-0.0202},
+  {m:"2025-01",beta:0.3776,eas:2.301,n:50,base:-0.1044,st:-0.0283,ema:-0.0238,combo:-0.0225,ultra:-0.0225,ch:-0.0178,uh:-0.0201,bench:-0.0058},
+  {m:"2025-02",beta:0.6282,eas:3.081,n:28,base:0.0641,st:0.0136,ema:0.0023,combo:0.0102,ultra:0.0102,ch:-0.0044,uh:-0.0227,bench:-0.0589},
+  {m:"2025-03",beta:0.4655,eas:2.549,n:68,base:0.0054,st:0.0202,ema:0.0096,combo:0.0173,ultra:0.0173,ch:-0.0047,uh:-0.0047,bench:0.0630},
+  {m:"2025-04",beta:0.5468,eas:2.287,n:69,base:0.1131,st:0.0762,ema:0.0666,combo:0.0593,ultra:0.0593,ch:0.0593,uh:0.0593,bench:0.0346},
+  {m:"2025-05",beta:0.5817,eas:3.899,n:76,base:0.0009,st:0.0130,ema:-0.0025,combo:0.0125,ultra:0.0125,ch:0.0125,uh:0.0125,bench:0.0171},
+  {m:"2025-06",beta:0.3749,eas:8.006,n:11,base:0.0371,st:0.0042,ema:0.0023,combo:-0.0030,ultra:-0.0030,ch:-0.0001,uh:-0.0001,bench:0.0310},
+  {m:"2025-07",beta:0.4918,eas:6.134,n:79,base:-0.0058,st:0.0008,ema:-0.0015,combo:-0.0021,ultra:-0.0021,ch:0.0009,uh:0.0009,bench:-0.0293},
+  {m:"2025-08",beta:0.5543,eas:4.330,n:75,base:0.0182,st:0.0134,ema:0.0165,combo:0.0131,ultra:0.0131,ch:0.0078,uh:0.0006,bench:-0.0138},
+  {m:"2025-09",beta:0.5251,eas:5.474,n:80,base:0.0314,st:-0.0030,ema:-0.0018,combo:-0.0061,ultra:-0.0061,ch:-0.0170,uh:-0.0316,bench:0.0075},
+  {m:"2025-10",beta:0.4533,eas:10.889,n:47,base:-0.0138,st:-0.0037,ema:-0.0046,combo:-0.0059,ultra:-0.0059,ch:-0.0059,uh:-0.0059,bench:0.0451},
+  {m:"2025-11",beta:0.4126,eas:7.478,n:83,base:0.0254,st:0.0180,ema:0.0283,combo:0.0182,ultra:0.0182,ch:0.0182,uh:0.0182,bench:0.0187},
+  {m:"2025-12",beta:0.4001,eas:5.729,n:81,base:-0.0558,st:-0.0310,ema:-0.0238,combo:-0.0236,ultra:-0.0236,ch:-0.0195,uh:-0.0134,bench:-0.0028},
+  {m:"2026-01",beta:0.4911,eas:3.290,n:87,base:0.0152,st:0.0099,ema:0.0059,combo:0.0020,ultra:0.0020,ch:-0.0121,uh:-0.0262,bench:-0.0310},
+  {m:"2026-02",beta:0.5057,eas:3.433,n:43,base:-0.1319,st:-0.0822,ema:-0.0735,combo:-0.0698,ultra:-0.0698,ch:-0.0278,uh:-0.0278,bench:-0.0056},
+  {m:"2026-03",beta:0.5127,eas:3.008,n:69,base:0.2071,st:0.1117,ema:0.1226,combo:0.0953,ultra:0.0953,ch:0.0798,uh:0.0591,bench:-0.1131},
+  {m:"2026-04",beta:0.6536,eas:3.459,n:44,base:-0.0010,st:-0.0015,ema:-0.0011,combo:-0.0013,ultra:-0.0013,ch:-0.0013,uh:-0.0013,bench:0.0835}
+];
+
+// Shift all months forward by 1
+const monthlyData = monthlyDataRaw.map(row => ({
+  ...row,
+  m: shiftMonthForward(row.m)
+}));
+
+const tsDataRaw = [
+  {m:"2021-04",base:1.0886,ch:1.0396,bench:0.9959,ddBase:0,ddCh:0},
+  {m:"2021-05",base:1.1440,ch:1.0766,bench:1.0607,ddBase:0,ddCh:0},
+  {m:"2021-06",base:1.2423,ch:1.1653,bench:1.0702,ddBase:0,ddCh:0},
+  {m:"2021-07",base:1.2923,ch:1.2011,bench:1.0730,ddBase:0,ddCh:0},
+  {m:"2021-08",base:1.2431,ch:1.1516,bench:1.1662,ddBase:-0.0380,ddCh:-0.0412},
+  {m:"2021-09",base:1.2329,ch:1.1494,bench:1.1993,ddBase:-0.0460,ddCh:-0.0431},
+  {m:"2021-10",base:1.2042,ch:1.1507,bench:1.2029,ddBase:-0.0682,ddCh:-0.0420},
+  {m:"2021-11",base:1.2063,ch:1.1437,bench:1.1561,ddBase:-0.0665,ddCh:-0.0478},
+  {m:"2021-12",base:1.1308,ch:1.1273,bench:1.1813,ddBase:-0.1250,ddCh:-0.0614},
+  {m:"2022-01",base:1.0549,ch:1.1138,bench:1.1803,ddBase:-0.1837,ddCh:-0.0727},
+  {m:"2022-02",base:1.1303,ch:1.1041,bench:1.1432,ddBase:-0.1253,ddCh:-0.0807},
+  {m:"2022-03",base:1.2131,ch:1.1614,bench:1.1888,ddBase:-0.0613,ddCh:-0.0331},
+  {m:"2022-04",base:1.1480,ch:1.1106,bench:1.1642,ddBase:-0.1117,ddCh:-0.0754},
+  {m:"2022-05",base:1.1595,ch:1.1223,bench:1.1289,ddBase:-0.1028,ddCh:-0.0656},
+  {m:"2022-06",base:1.2498,ch:1.1303,bench:1.0742,ddBase:-0.0329,ddCh:-0.0590},
+  {m:"2022-07",base:1.2894,ch:1.1246,bench:1.1680,ddBase:-0.0022,ddCh:-0.0638},
+  {m:"2022-08",base:1.2934,ch:1.1217,bench:1.2089,ddBase:0,ddCh:-0.0661},
+  {m:"2022-09",base:1.3332,ch:1.1385,bench:1.1636,ddBase:0,ddCh:-0.0521},
+  {m:"2022-10",base:1.3405,ch:1.1505,bench:1.2261,ddBase:0,ddCh:-0.0421},
+  {m:"2022-11",base:1.3441,ch:1.1661,bench:1.2769,ddBase:0,ddCh:-0.0292},
+  {m:"2022-12",base:1.2843,ch:1.1395,bench:1.2324,ddBase:-0.0445,ddCh:-0.0513},
+  {m:"2023-01",base:1.2256,ch:1.1132,bench:1.2023,ddBase:-0.0882,ddCh:-0.0732},
+  {m:"2023-02",base:1.2449,ch:1.1066,bench:1.1779,ddBase:-0.0739,ddCh:-0.0787},
+  {m:"2023-03",base:1.3234,ch:1.1396,bench:1.1817,ddBase:-0.0155,ddCh:-0.0512},
+  {m:"2023-04",base:1.4092,ch:1.1985,bench:1.2297,ddBase:0,ddCh:-0.0022},
+  {m:"2023-05",base:1.5828,ch:1.3328,bench:1.2616,ddBase:0,ddCh:0},
+  {m:"2023-06",base:1.7024,ch:1.4276,bench:1.3062,ddBase:0,ddCh:0},
+  {m:"2023-07",base:1.7663,ch:1.4612,bench:1.3446,ddBase:0,ddCh:0},
+  {m:"2023-08",base:1.7949,ch:1.4694,bench:1.3106,ddBase:0,ddCh:0},
+  {m:"2023-09",base:1.8207,ch:1.4899,bench:1.3368,ddBase:0,ddCh:0},
+  {m:"2023-10",base:2.0971,ch:1.6590,bench:1.2988,ddBase:0,ddCh:0},
+  {m:"2023-11",base:2.2008,ch:1.7119,bench:1.3705,ddBase:0,ddCh:0},
+  {m:"2023-12",base:2.4250,ch:1.8727,bench:1.4793,ddBase:0,ddCh:0},
+  {m:"2024-01",base:2.6275,ch:1.9910,bench:1.4789,ddBase:0,ddCh:0},
+  {m:"2024-02",base:2.6216,ch:1.9638,bench:1.4964,ddBase:-0.0022,ddCh:-0.0137},
+  {m:"2024-03",base:2.8386,ch:1.9901,bench:1.5198,ddBase:0,ddCh:-0.0005},
+  {m:"2024-04",base:2.8457,ch:1.9373,bench:1.5387,ddBase:0,ddCh:-0.0269},
+  {m:"2024-05",base:3.0920,ch:2.0161,bench:1.5337,ddBase:0,ddCh:0},
+  {m:"2024-06",base:3.2517,ch:2.0886,bench:1.6344,ddBase:0,ddCh:0},
+  {m:"2024-07",base:3.4012,ch:2.1447,bench:1.6984,ddBase:0,ddCh:0},
+  {m:"2024-08",base:3.5000,ch:2.1839,bench:1.7178,ddBase:0,ddCh:0},
+  {m:"2024-09",base:3.5032,ch:2.2391,bench:1.7570,ddBase:0,ddCh:0},
+  {m:"2024-10",base:3.4950,ch:2.2317,bench:1.6477,ddBase:-0.0024,ddCh:-0.0033},
+  {m:"2024-11",base:3.9314,ch:2.3017,bench:1.6426,ddBase:0,ddCh:0},
+  {m:"2024-12",base:3.3297,ch:2.0227,bench:1.6095,ddBase:-0.1531,ddCh:-0.1212},
+  {m:"2025-01",base:2.9821,ch:1.9867,bench:1.6002,ddBase:-0.2415,ddCh:-0.1368},
+  {m:"2025-02",base:3.1733,ch:1.9779,bench:1.5060,ddBase:-0.1928,ddCh:-0.1406},
+  {m:"2025-03",base:3.1906,ch:1.9686,bench:1.6010,ddBase:-0.1884,ddCh:-0.1447},
+  {m:"2025-04",base:3.5516,ch:2.0855,bench:1.6564,ddBase:-0.0966,ddCh:-0.0939},
+  {m:"2025-05",base:3.5549,ch:2.1115,bench:1.6848,ddBase:-0.0958,ddCh:-0.0826},
+  {m:"2025-06",base:3.6869,ch:2.1112,bench:1.7370,ddBase:-0.0622,ddCh:-0.0827},
+  {m:"2025-07",base:3.6656,ch:2.1132,bench:1.6860,ddBase:-0.0676,ddCh:-0.0819},
+  {m:"2025-08",base:3.7325,ch:2.1296,bench:1.6627,ddBase:-0.0506,ddCh:-0.0747},
+  {m:"2025-09",base:3.8498,ch:2.0934,bench:1.6753,ddBase:-0.0208,ddCh:-0.0905},
+  {m:"2025-10",base:3.7966,ch:2.0811,bench:1.7509,ddBase:-0.0343,ddCh:-0.0958},
+  {m:"2025-11",base:3.8930,ch:2.1190,bench:1.7836,ddBase:-0.0098,ddCh:-0.0794},
+  {m:"2025-12",base:3.6759,ch:2.0776,bench:1.7786,ddBase:-0.0650,ddCh:-0.0974},
+  {m:"2026-01",base:3.7320,ch:2.0525,bench:1.7236,ddBase:-0.0507,ddCh:-0.1083},
+  {m:"2026-02",base:3.2397,ch:1.9953,bench:1.7139,ddBase:-0.1759,ddCh:-0.1331},
+  {m:"2026-03",base:3.9108,ch:2.1545,bench:1.5201,ddBase:-0.0052,ddCh:-0.0639},
+  {m:"2026-04",base:3.9067,ch:2.1517,bench:1.6471,ddBase:-0.0063,ddCh:-0.0652}
+];
+
+const tsData = tsDataRaw.map(row => ({
+  ...row,
+  m: shiftMonthForward(row.m)
+}));
+
+// HEATMAP DATA - Now correctly shifted
+// Original: 2021 Apr=0.0396 → Display as: 2021 May=0.0396
+const heatmapCH = {
+  "2021":{"Jan":null,"Feb":null,"Mar":null,"Apr":null,"May":0.0396,"Jun":0.0355,"Jul":0.0824,"Aug":0.0308,"Sep":-0.0412,"Oct":-0.0019,"Nov":0.0011,"Dec":-0.0061},
+  "2022":{"Jan":-0.0143,"Feb":-0.0120,"Mar":-0.0087,"Apr":0.0519,"May":-0.0438,"Jun":0.0105,"Jul":0.0071,"Aug":-0.0051,"Sep":-0.0026,"Oct":0.0150,"Nov":0.0106,"Dec":0.0135},
+  "2023":{"Jan":-0.0228,"Feb":-0.0230,"Mar":-0.0059,"Apr":0.0298,"May":0.0516,"Jun":0.1121,"Jul":0.0711,"Aug":0.0236,"Sep":0.0056,"Oct":0.0140,"Nov":0.1135,"Dec":0.0319},
+  "2024":{"Jan":0.0939,"Feb":0.0632,"Mar":-0.0137,"Apr":0.0134,"May":-0.0265,"Jun":0.0407,"Jul":0.0360,"Aug":0.0268,"Sep":0.0183,"Oct":0.0253,"Nov":-0.0033,"Dec":0.0314},
+  "2025":{"Jan":-0.1212,"Feb":-0.0178,"Mar":-0.0044,"Apr":-0.0047,"May":0.0593,"Jun":0.0125,"Jul":-0.0001,"Aug":0.0009,"Sep":0.0078,"Oct":-0.0170,"Nov":-0.0059,"Dec":0.0182},
+  "2026":{"Jan":-0.0195,"Feb":-0.0121,"Mar":-0.0278,"Apr":0.0798,"May":-0.0013,"Jun":null,"Jul":null,"Aug":null,"Sep":null,"Oct":null,"Nov":null,"Dec":null}
+};
+
+const heatmapBase = {
+  "2021":{"Jan":null,"Feb":null,"Mar":null,"Apr":null,"May":0.0886,"Jun":0.0509,"Jul":0.0859,"Aug":0.0402,"Sep":-0.0380,"Oct":-0.0083,"Nov":-0.0232,"Dec":0.0017},
+  "2022":{"Jan":-0.0626,"Feb":-0.0671,"Mar":0.0715,"Apr":0.0732,"May":-0.0537,"Jun":0.0100,"Jul":0.0779,"Aug":0.0317,"Sep":0.0030,"Oct":0.0308,"Nov":0.0055,"Dec":0.0027},
+  "2023":{"Jan":-0.0445,"Feb":-0.0457,"Mar":0.0157,"Apr":0.0631,"May":0.0649,"Jun":0.1231,"Jul":0.0756,"Aug":0.0376,"Sep":0.0162,"Oct":0.0144,"Nov":0.1518,"Dec":0.0495},
+  "2024":{"Jan":0.1019,"Feb":0.0835,"Mar":-0.0022,"Apr":0.0827,"May":0.0025,"Jun":0.0866,"Jul":0.0516,"Aug":0.0460,"Sep":0.0291,"Oct":0.0009,"Nov":-0.0024,"Dec":0.1249},
+  "2025":{"Jan":-0.1531,"Feb":-0.1044,"Mar":0.0641,"Apr":0.0054,"May":0.1131,"Jun":0.0009,"Jul":0.0371,"Aug":-0.0058,"Sep":0.0182,"Oct":0.0314,"Nov":-0.0138,"Dec":0.0254},
+  "2026":{"Jan":-0.0558,"Feb":0.0152,"Mar":-0.1319,"Apr":0.2071,"May":-0.0010,"Jun":null,"Jul":null,"Aug":null,"Sep":null,"Oct":null,"Nov":null,"Dec":null}
+};
+
+const defsData = [
+  {term:"Alpha (Institutional)", desc:"Excess return generated over the benchmark: CAGR_portfolio − CAGR_benchmark."},
+  {term:"XIRR", desc:"Extended Internal Rate of Return, accounting for the time value of money and all capital flows."},
+  {term:"Calmar Ratio", desc:"CAGR ÷ |Max Drawdown|. Measures return earned per unit of drawdown risk."},
+  {term:"Avg Ex-Ante Sharpe", desc:"Average expected return ÷ Expected Volatility, derived from the historical covariance matrix. Forward-looking risk-adjusted metric."},
+  {term:"Expectancy", desc:"Average expected P&L per trade: (Win% × Avg Gain) + (Loss% × Avg Loss)."},
+  {term:"VaR 99%", desc:"99% confidence that losses will not exceed this value in any single month."},
+  {term:"CVaR / Expected Shortfall", desc:"Average loss in the extreme tail (beyond VaR) — the severity of worst-case scenarios."},
+  {term:"Portfolio Beta", desc:"Weighted average of individual stock betas: Σ(Weight_i × Beta_i)."},
+  {term:"Survival Filter", desc:"Look-ahead check ensuring stock data availability in the trade month — removes delisting risk."},
+  {term:"Info Ratio", desc:"Alpha ÷ Tracking Error. Efficiency of active returns relative to benchmark deviation."},
+  {term:"Profit Factor", desc:"Gross profit ÷ Gross loss. Values above 1 indicate a net profitable strategy over the period."},
+  {term:"Portfolio Turnover", desc:"Measure of portfolio activity showing stocks added and removed month-over-month."}
+];
+
+// ============================================================
+// HELPERS
+// ============================================================
+function pct(v, dec=1) {
+  if (v === null || isNaN(v)) return '—';
+  return (v * 100).toFixed(dec) + '%';
+}
+function fmt(v, dec=2) {
+  if (v === null || isNaN(v)) return '—';
+  return v.toFixed(dec);
+}
+function colorClass(v, metric) {
+  if (v === null || isNaN(v)) return '';
+  const negMetrics = ["Max Drawdown","VaR 95%","VaR 99%","CVaR 95%","CVaR 99%","Avg Loss (M)","Worst Month","Downside Dev"];
+  if (metric === "DD Duration (M)") return 'td-neg';
+  if (negMetrics.includes(metric)) return v < 0 ? 'td-neg' : 'td-pos';
+  return v > 0 ? 'td-pos' : 'td-neg';
+}
+function hmColor(v) {
+  if (v === null) return 'background:#111318; color:#333;';
+  const intensity = Math.min(Math.abs(v) / 0.15, 1);
+  if (v > 0) {
+    const g = Math.round(60 + intensity * 120);
+    return `background:rgba(46,${g},80,${0.3 + intensity * 0.6}); color:${v > 0.05 ? '#2ecc8a':'#7de0b5'};`;
+  } else {
+    const r = Math.round(100 + intensity * 100);
+    return `background:rgba(${r},30,30,${0.3 + intensity * 0.6}); color:${v < -0.05 ? '#e05c5c':'#f0a0a0'};`;
+  }
+}
+function annualReturn(row) {
+  const months = Object.values(row).filter(v => v !== null);
+  return months.reduce((acc, m) => acc * (1 + m), 1) - 1;
+}
+
+// ============================================================
+// RENDER DASHBOARD TABLE
+// ============================================================
+function renderDash() {
+  const pctMetrics = ["CAGR","XIRR","Abs Return","Alpha vs Bench","Volatility","Downside Dev","Max Drawdown","VaR 95%","VaR 99%","CVaR 95%","CVaR 99%","Win Rate","Expectancy","Avg Gain (M)","Avg Loss (M)","Rolling 1Y","Rolling 3Y","Best Month","Worst Month"];
+  const tbody = document.getElementById('dash-tbody');
+  dashData.metrics.forEach(metric => {
+    const tr = document.createElement('tr');
+    const vals = dashData.values[metric];
+    const isPct = pctMetrics.includes(metric);
+    let rowHtml = `<td>${metric}</td>`;
+    vals.forEach(v => {
+      const cls = colorClass(v, metric);
+      const disp = metric === "DD Duration (M)" ? v : (isPct ? pct(v) : fmt(v));
+      rowHtml += `<td class="${cls}">${disp}</td>`;
+    });
+    tr.innerHTML = rowHtml;
+    tbody.appendChild(tr);
+  });
+}
+
+// ============================================================
+// RENDER MONTHLY TABLE
+// ============================================================
+function renderMonthly() {
+  const tbody = document.getElementById('monthly-tbody');
+  monthlyData.forEach(row => {
+    const tr = document.createElement('tr');
+    const fields = ['base','st','ema','combo','ultra','ch','uh','bench'];
+    let html = `<td>${row.m}</td>
+      <td>${row.beta.toFixed(3)}</td>
+      <td style="color:var(--gold)">${row.eas.toFixed(2)}</td>
+      <td>${row.n}</td>`;
+    fields.forEach(f => {
+      const v = row[f];
+      const cls = v > 0 ? 'td-pos' : (v < 0 ? 'td-neg' : '');
+      html += `<td class="${cls}">${pct(v)}</td>`;
+    });
+    tr.innerHTML = html;
+    tbody.appendChild(tr);
+  });
+}
+
+// ============================================================
+// RENDER HEATMAP
+// ============================================================
+function renderHeatmap(data, tbodyId) {
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const tbody = document.getElementById(tbodyId);
+  Object.keys(data).sort().forEach(yr => {
+    const row = data[yr];
+    const tr = document.createElement('tr');
+    const annual = annualReturn(row);
+    let html = `<td class="year-label">${yr}</td>`;
+    months.forEach(mo => {
+      const v = row[mo];
+      if (v === null) {
+        html += `<td style="background:var(--bg); color:var(--border);">—</td>`;
+      } else {
+        html += `<td style="${hmColor(v)}">${pct(v)}</td>`;
+      }
+    });
+    const annCls = annual > 0 ? 'color:var(--green)' : 'color:var(--red)';
+    html += `<td style="${annCls}; font-weight:500;">${pct(annual)}</td>`;
+    tr.innerHTML = html;
+    tbody.appendChild(tr);
+  });
+}
+
+// ============================================================
+// RENDER CHURNING STATS
+// ============================================================
+function renderChurnStats() {
+  const avgEAS = (monthlyData.reduce((s,r)=>s+r.eas,0)/monthlyData.length).toFixed(2);
+  const avgBeta = (monthlyData.reduce((s,r)=>s+r.beta,0)/monthlyData.length).toFixed(3);
+  const maxStocks = Math.max(...monthlyData.map(r=>r.n));
+  const minStocks = Math.min(...monthlyData.map(r=>r.n));
+  const avgStocks = (monthlyData.reduce((s,r)=>s+r.n,0)/monthlyData.length).toFixed(0);
+  const stats = [
+    {label:"Avg Ex-Ante Sharpe", val:avgEAS, sub:"Full period average"},
+    {label:"Avg Portfolio Beta", val:avgBeta, sub:"Market exposure"},
+    {label:"Avg Stock Count", val:avgStocks, sub:"Holdings per month"},
+    {label:"Max Stocks", val:maxStocks, sub:"Peak concentration"},
+    {label:"Min Stocks", val:minStocks, sub:"Minimum holdings"}
+  ];
+  const container = document.getElementById('churn-stats-cards');
+  stats.forEach(s => {
+    container.innerHTML += `<div class="churn-stat">
+      <div class="churn-stat-label">${s.label}</div>
+      <div class="churn-stat-val">${s.val}</div>
+      <div class="churn-stat-sub">${s.sub}</div>
+    </div>`;
+  });
+}
+
+// ============================================================
+// RENDER DEFINITIONS
+// ============================================================
+function renderDefs() {
+  const grid = document.getElementById('defs-grid');
+  defsData.forEach(d => {
+    grid.innerHTML += `<div class="def-card">
+      <div class="def-term">${d.term}</div>
+      <div class="def-desc">${d.desc}</div>
+    </div>`;
+  });
+}
+
+// ============================================================
+// CHARTS
+// ============================================================
+const chartDefaults = {
+  plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false,
+    backgroundColor: '#181c24', titleColor: '#8a9bb5', bodyColor: '#d4dae8',
+    borderColor: '#1e2330', borderWidth: 1, padding: 10 }},
+  scales: {
+    x: { grid: { color: 'rgba(30,35,48,0.5)', drawBorder: false },
+         ticks: { color: '#5c6a82', font: { family: 'DM Mono', size: 9 }, maxRotation: 45, maxTicksLimit: 12 }},
+    y: { grid: { color: 'rgba(30,35,48,0.5)', drawBorder: false },
+         ticks: { color: '#5c6a82', font: { family: 'DM Mono', size: 9 }}}
+  }
+};
+
+function buildCharts() {
+  const labels = tsData.map(d => d.m);
+
+  // EQUITY
+  new Chart(document.getElementById('equityChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label:'Base SIM', data: tsData.map(d=>d.base), borderColor:'#c9a84c', borderWidth:2, pointRadius:0, tension:0.3, fill:false },
+        { label:'COMBO+Hedge', data: tsData.map(d=>d.ch), borderColor:'#5b9bd5', borderWidth:2, pointRadius:0, tension:0.3, fill:false },
+        { label:'Benchmark', data: tsData.map(d=>d.bench), borderColor:'#4a4f62', borderWidth:1.5, pointRadius:0, tension:0.3, fill:false, borderDash:[4,3] }
+      ]
+    },
+    options: { ...chartDefaults, responsive: true, maintainAspectRatio: false,
+      scales: { ...chartDefaults.scales,
+        y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks,
+          callback: v => v.toFixed(1)+'x' }}}}
+  });
+
+  // DRAWDOWN
+  new Chart(document.getElementById('drawdownChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label:'Base SIM DD', data: tsData.map(d=>d.ddBase*100), borderColor:'#e05c5c', borderWidth:2, pointRadius:0, tension:0.3, fill: { target:'origin', above:'transparent', below:'rgba(224,92,92,0.15)' }},
+        { label:'COMBO+Hedge DD', data: tsData.map(d=>d.ddCh*100), borderColor:'#5b9bd5', borderWidth:2, pointRadius:0, tension:0.3, fill: { target:'origin', above:'transparent', below:'rgba(91,155,213,0.12)' }}
+      ]
+    },
+    options: { ...chartDefaults, responsive: true, maintainAspectRatio: false,
+      scales: { ...chartDefaults.scales,
+        y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks,
+          callback: v => v.toFixed(1)+'%' }}}}
+  });
+
+  // MAX DD BAR
+  const strats = dashData.cols;
+  const mdd = dashData.values["Max Drawdown"].map(v=>v*100);
+  new Chart(document.getElementById('maxDDChart'), {
+    type: 'bar',
+    data: { labels: strats, datasets: [{ data: mdd, backgroundColor: mdd.map(v=>`rgba(224,92,92,${0.4+Math.abs(v)/30})`), borderColor: '#e05c5c', borderWidth:1 }]},
+    options: { ...chartDefaults, responsive:true, maintainAspectRatio:false, indexAxis:'y',
+      scales: { x: { ...chartDefaults.scales.x, ticks: { ...chartDefaults.scales.x.ticks, callback: v=>v+'%' }}, y: chartDefaults.scales.y }}
+  });
+
+  // VAR
+  new Chart(document.getElementById('varChart'), {
+    type: 'bar',
+    data: { labels: strats, datasets: [
+      { label:'VaR 95%', data: dashData.values["VaR 95%"].map(v=>v*100), backgroundColor:'rgba(224,92,92,0.5)', borderColor:'#e05c5c', borderWidth:1 },
+      { label:'VaR 99%', data: dashData.values["VaR 99%"].map(v=>v*100), backgroundColor:'rgba(224,92,92,0.25)', borderColor:'#c04040', borderWidth:1 }
+    ]},
+    options: { ...chartDefaults, responsive:true, maintainAspectRatio:false,
+      plugins: { ...chartDefaults.plugins, legend: { display:true, labels: { color:'#5c6a82', font:{size:9}, boxWidth:8 }}},
+      scales: { x: { ...chartDefaults.scales.x, ticks:{...chartDefaults.scales.x.ticks, maxRotation:30}}, y: { ...chartDefaults.scales.y, ticks:{...chartDefaults.scales.y.ticks, callback:v=>v+'%'}}}}
+  });
+
+  // CVAR
+  new Chart(document.getElementById('cvarChart'), {
+    type: 'bar',
+    data: { labels: strats, datasets: [
+      { label:'CVaR 95%', data: dashData.values["CVaR 95%"].map(v=>v*100), backgroundColor:'rgba(230,130,50,0.5)', borderColor:'#e6a230', borderWidth:1 },
+      { label:'CVaR 99%', data: dashData.values["CVaR 99%"].map(v=>v*100), backgroundColor:'rgba(230,130,50,0.25)', borderColor:'#c07820', borderWidth:1 }
+    ]},
+    options: { ...chartDefaults, responsive:true, maintainAspectRatio:false,
+      plugins: { ...chartDefaults.plugins, legend: { display:true, labels: { color:'#5c6a82', font:{size:9}, boxWidth:8 }}},
+      scales: { x: { ...chartDefaults.scales.x, ticks:{...chartDefaults.scales.x.ticks, maxRotation:30}}, y: { ...chartDefaults.scales.y, ticks:{...chartDefaults.scales.y.ticks, callback:v=>v+'%'}}}}
+  });
+
+  // MONTHLY BAR
+  const mLabels = monthlyData.map(d => d.m);
+  new Chart(document.getElementById('monthlyBarChart'), {
+    type: 'bar',
+    data: { labels: mLabels, datasets: [
+      { label:'Base SIM', data: monthlyData.map(d=>d.base*100), backgroundColor: monthlyData.map(d=>d.base>=0?'rgba(201,168,76,0.7)':'rgba(224,92,92,0.7)'), borderWidth:0 },
+      { label:'COMBO+Hedge', data: monthlyData.map(d=>d.ch*100), backgroundColor: monthlyData.map(d=>d.ch>=0?'rgba(91,155,213,0.7)':'rgba(150,60,60,0.5)'), borderWidth:0 },
+      { label:'Benchmark', data: monthlyData.map(d=>d.bench*100), type:'line', borderColor:'#4a4f62', borderWidth:1.5, pointRadius:0, tension:0.3, fill:false }
+    ]},
+    options: { ...chartDefaults, responsive:true, maintainAspectRatio:false,
+      plugins: { ...chartDefaults.plugins, legend:{ display:true, labels:{ color:'#5c6a82', font:{size:9}, boxWidth:8 }}},
+      scales: { ...chartDefaults.scales, y:{ ...chartDefaults.scales.y, ticks:{...chartDefaults.scales.y.ticks, callback:v=>v+'%'}}}}
+  });
+
+  // EX-ANTE SHARPE
+  new Chart(document.getElementById('sharpeTimeChart'), {
+    type: 'line',
+    data: { labels: mLabels,
+      datasets: [{ data: monthlyData.map(d=>d.eas), borderColor:'#c9a84c', borderWidth:1.5, pointRadius:0, tension:0.3, fill:{target:'origin',above:'rgba(201,168,76,0.07)',below:'transparent'}}]
+    },
+    options: { ...chartDefaults, responsive:true, maintainAspectRatio:false,
+      scales: { ...chartDefaults.scales, y:{ ...chartDefaults.scales.y, ticks:{...chartDefaults.scales.y.ticks, callback:v=>v.toFixed(1)}}}}
+  });
+
+  // BETA
+  new Chart(document.getElementById('betaTimeChart'), {
+    type: 'line',
+    data: { labels: mLabels,
+      datasets: [{ data: monthlyData.map(d=>d.beta), borderColor:'#5b9bd5', borderWidth:1.5, pointRadius:0, tension:0.3, fill:{target:'origin',above:'rgba(91,155,213,0.07)',below:'transparent'}}]
+    },
+    options: { ...chartDefaults, responsive:true, maintainAspectRatio:false,
+      scales: { ...chartDefaults.scales, y:{ ...chartDefaults.scales.y, ticks:{...chartDefaults.scales.y.ticks, callback:v=>v.toFixed(2)}}}}
+  });
+
+  // STOCK COUNT WITH TURNOVER
+  const stockCounts = monthlyData.map(d=>d.n);
+  const stocksAdded = [0]; 
+  const stocksRemoved = [0];
+  
+  for (let i = 1; i < monthlyData.length; i++) {
+    const prev = monthlyData[i-1].n;
+    const curr = monthlyData[i].n;
+    const change = curr - prev;
+    stocksAdded.push(Math.max(0, change));
+    stocksRemoved.push(Math.max(0, -change));
+  }
+
+  new Chart(document.getElementById('stockCountChart'), {
+    type: 'bar',
+    data: { 
+      labels: mLabels,
+      datasets: [
+        { label: 'Total Stocks', data: stockCounts, backgroundColor:'rgba(91,155,213,0.6)', borderColor:'#5b9bd5', borderWidth:1 },
+        { label: 'Added', data: stocksAdded, backgroundColor:'rgba(46,204,138,0.5)', borderColor:'#2ecc8a', borderWidth:1 },
+        { label: 'Removed', data: stocksRemoved, backgroundColor:'rgba(224,92,92,0.5)', borderColor:'#e05c5c', borderWidth:1 }
+      ]
+    },
+    options: { 
+      ...chartDefaults, 
+      responsive:true, 
+      maintainAspectRatio:false,
+      plugins: { 
+        ...chartDefaults.plugins, 
+        legend: { display:true, labels: { color:'#5c6a82', font:{size:9}, boxWidth:8 }}
+      }
+    }
+  });
+}
+
+// ============================================================
+// NAV
+// ============================================================
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('section-'+id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ============================================================
+// INIT
+// ============================================================
+renderDash();
+renderMonthly();
+renderHeatmap(heatmapCH, 'heatmap-tbody');
+renderHeatmap(heatmapBase, 'heatmap-base-tbody');
+renderChurnStats();
+renderDefs();
+buildCharts();
+</script>
+</body>
+>>>>>>> 9f095eb206d5fe13b9f2574b5ce7a3bb5a562518
 </html>
