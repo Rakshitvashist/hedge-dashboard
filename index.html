@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hedge Strategy Analytics — Institutional Deep Dive</title>
+<title>Sharp Efficient Model — Institutional Deep Dive</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Mono:wght@300;400;500&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
 <style>
@@ -290,6 +290,14 @@
     color: var(--silver);
     line-height: 1.6;
   }
+  .layer-card {
+    border-left: 3px solid var(--blue);
+    background: linear-gradient(90deg, rgba(91,155,213,0.05) 0%, var(--surface) 100%);
+  }
+  .layer-card .def-term {
+    color: var(--blue);
+    font-weight: 600;
+  }
 
   /* MONTHLY TABLE */
   .monthly-table-wrap { overflow-x: auto; max-height: 520px; overflow-y: auto; }
@@ -353,7 +361,7 @@
 <div class="header">
   <div class="header-top">
     <div>
-      <h1>Hedge Strategy Analytics
+      <h1>Sharp Efficient Model
         <span>INSTITUTIONAL DEEP DIVE — FULL PERIOD 2021–2026</span>
       </h1>
     </div>
@@ -542,9 +550,13 @@
 
   <!-- DEFINITIONS -->
   <div class="section" id="section-defs">
-    <div class="section-title">Strategy &amp; Metric Definitions</div>
-    <div class="section-sub">Mathematical formulae and conceptual descriptions</div>
-    <div class="defs-grid" id="defs-grid"></div>
+    <div class="section-title">Sharp Efficient Model — Strategic Defense Layers</div>
+    <div class="section-sub">Proprietary selection logic and multi-layered risk mitigation systems</div>
+    <div class="defs-grid" id="layers-grid" style="margin-bottom: 48px;"></div>
+
+    <div class="section-title" style="font-size: 16px;">Mathematical &amp; Auditing Metrics</div>
+    <div class="section-sub">Standardized institutional performance and risk definitions</div>
+    <div class="defs-grid" id="metrics-grid"></div>
   </div>
 
 </div>
@@ -758,6 +770,13 @@ const heatmapBase = {
 };
 
 const defsData = [
+  {term:"1. Base SIM (Portfolio Optimization)", desc:"The foundational selection layer. We calculate individual stock Betas and Residual Variance (σ²) using the Single Index Model (SIM). Stocks are ranked by their Excess Return to Beta (ERB). Only stocks providing 'alpha' above a mathematical cut-off (Ci) are selected, with a 10% weight cap to prevent over-concentration."},
+  {term:"2. ST Filter (Momentum Defense)", desc:"A momentum-based defensive layer. We apply a monthly Supertrend (10, 3) filter. Only stocks in a Bullish state (Trend = 1) are retained. Bearish momentum triggers an immediate exit to avoid 'catching a falling knife'."},
+  {term:"3. EMA Filter (Trend Defense)", desc:"A long-term trend defensive layer. We calculate the 40-period Exponential Moving Average (EMA). Stocks must trade above their EMA-40 to remain in the portfolio, ensuring alignment with the primary long-term trend."},
+  {term:"4. COMBO Filter (High-Conviction Layer)", desc:"A 'Double-Lock' validation system. A stock must pass BOTH the Supertrend and the EMA-40 filters simultaneously. This significantly reduces volatility and drawdowns by selecting only high-conviction momentum and trend performers."},
+  {term:"5. ULTRA Layer (Alpha Concentration)", desc:"An alpha-concentrated version of the COMBO selection. It focuses on the elite performers that have cleared all institutional filters, serving as the baseline for aggressive hedging strategies during market breadth deterioration."},
+  {term:"6. COMBO + Hedge (Active Beta Hedging)", desc:"Active market risk neutralization using NIFTY Futures. We monitor Multi-Timeframe (MTF) alignment (15m, 30m, 1h, 1d). When all timeframes turn Bearish, the portfolio is hedged by shorting Nifty Futures proportional to its Beta."},
+  {term:"7. ULTRA Defense (Aggressive Multiplier Hedge)", desc:"Tail-risk protection mechanism based on Market Breadth (COMBO vs Base ratio). If breadth falls below 50%, a 2.0x Beta multiplier is applied to the Nifty short position, providing 'Super-Hedging' against systemic breakdowns or Black Swan events."},
   {term:"Alpha (Institutional)", desc:"Excess return generated over the benchmark: CAGR_portfolio − CAGR_benchmark."},
   {term:"XIRR", desc:"Extended Internal Rate of Return, accounting for the time value of money and all capital flows."},
   {term:"Calmar Ratio", desc:"CAGR ÷ |Max Drawdown|. Measures return earned per unit of drawdown risk."},
@@ -911,9 +930,15 @@ function renderChurnStats() {
 // RENDER DEFINITIONS
 // ============================================================
 function renderDefs() {
-  const grid = document.getElementById('defs-grid');
-  defsData.forEach(d => {
-    grid.innerHTML += `<div class="def-card">
+  const layersGrid = document.getElementById('layers-grid');
+  const metricsGrid = document.getElementById('metrics-grid');
+  
+  defsData.forEach((d, idx) => {
+    const isLayer = idx < 7;
+    const targetGrid = isLayer ? layersGrid : metricsGrid;
+    const cardClass = isLayer ? 'def-card layer-card' : 'def-card';
+    
+    targetGrid.innerHTML += `<div class="${cardClass}">
       <div class="def-term">${d.term}</div>
       <div class="def-desc">${d.desc}</div>
     </div>`;
